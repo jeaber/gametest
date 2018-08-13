@@ -1,0 +1,252 @@
+{
+    "accessors" : [
+        {
+            "bufferView" : 0,
+            "componentType" : 5121,
+            "count" : 240,
+            "max" : [
+                54
+            ],
+            "min" : [
+                0
+            ],
+            "type" : "SCALAR"
+        },
+        {
+            "bufferView" : 1,
+            "componentType" : 5126,
+            "count" : 55,
+            "max" : [
+                0.9728788733482361,
+                0.5905773043632507,
+                0.8300687074661255
+            ],
+            "min" : [
+                -0.8356642723083496,
+                -0.681211531162262,
+                -0.8209616541862488
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 2,
+            "componentType" : 5126,
+            "count" : 55,
+            "max" : [
+                0.8937650918960571,
+                0.9981688857078552,
+                0.9541917443275452
+            ],
+            "min" : [
+                -0.9295938014984131,
+                -0.9791253209114075,
+                -0.9577318429946899
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 3,
+            "componentType" : 5126,
+            "count" : 55,
+            "max" : [
+                0.9960848093032837,
+                0.957782506942749,
+                0.9626588821411133,
+                1.0
+            ],
+            "min" : [
+                -0.8553053140640259,
+                -0.5556150674819946,
+                -0.9604760408401489,
+                1.0
+            ],
+            "type" : "VEC4"
+        },
+        {
+            "bufferView" : 4,
+            "componentType" : 5126,
+            "count" : 55,
+            "max" : [
+                0.5500221252441406,
+                0.999899917471339
+            ],
+            "min" : [
+                0.0001000825286610052,
+                0.00010007619857788086
+            ],
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 5,
+            "componentType" : 5126,
+            "count" : 55,
+            "max" : [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "min" : [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "type" : "VEC4"
+        }
+    ],
+    "asset" : {
+        "generator" : "Khronos Blender glTF 2.0 exporter",
+        "version" : "2.0"
+    },
+    "bufferViews" : [
+        {
+            "buffer" : 0,
+            "byteLength" : 240,
+            "byteOffset" : 0,
+            "target" : 34963
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 660,
+            "byteOffset" : 240,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 660,
+            "byteOffset" : 900,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 880,
+            "byteOffset" : 1560,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 440,
+            "byteOffset" : 2440,
+            "target" : 34962
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 880,
+            "byteOffset" : 2880,
+            "target" : 34962
+        }
+    ],
+    "buffers" : [
+        {
+            "byteLength" : 3760,
+            "uri" : "Astroid3rd.bin"
+        }
+    ],
+    "images" : [
+        {
+            "name" : "Normal",
+            "uri" : "Normal.png"
+        },
+        {
+            "name" : "Cavity",
+            "uri" : "Cavity.png"
+        },
+        {
+            "name" : "AA02",
+            "uri" : "AA02.png"
+        }
+    ],
+    "materials" : [
+        {
+            "name" : "Material.003",
+            "normalTexture" : {
+                "index" : 0
+            },
+            "occlusionTexture" : {
+                "index" : 1
+            },
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.6400000190734865,
+                    0.6400000190734865,
+                    0.6400000190734865,
+                    1.0
+                ],
+                "baseColorTexture" : {
+                    "index" : 2
+                },
+                "metallicFactor" : 0.0
+            }
+        }
+    ],
+    "meshes" : [
+        {
+            "name" : "Icosphere.002",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "COLOR_0" : 5,
+                        "NORMAL" : 2,
+                        "POSITION" : 1,
+                        "TANGENT" : 3,
+                        "TEXCOORD_0" : 4
+                    },
+                    "indices" : 0,
+                    "material" : 0
+                }
+            ]
+        }
+    ],
+    "nodes" : [
+        {
+            "mesh" : 0,
+            "name" : "Asteroid",
+            "scale" : [
+                2.333440065383911,
+                2.333440065383911,
+                2.333440065383911
+            ],
+            "translation" : [
+                -0.0935211181640625,
+                0.07260766625404358,
+                -0.0
+            ]
+        },
+        {
+            "name" : "Spot",
+            "translation" : [
+                0.3639655113220215,
+                8.150903701782227,
+                1.4959869384765625
+            ]
+        }
+    ],
+    "samplers" : [
+        {}
+    ],
+    "scene" : 0,
+    "scenes" : [
+        {
+            "name" : "Scene",
+            "nodes" : [
+                1,
+                0
+            ]
+        }
+    ],
+    "textures" : [
+        {
+            "sampler" : 0,
+            "source" : 0
+        },
+        {
+            "sampler" : 0,
+            "source" : 1
+        },
+        {
+            "sampler" : 0,
+            "source" : 2
+        }
+    ]
+}
