@@ -97,7 +97,9 @@ export class MainComponent implements OnInit {
 		// this.loadAsteroidModelGLTF();
 		this.loadPlayer();
 		this.loadAllPlayers();
-		this.loadModelGLTF();
+		for (let i = 0; i < 50000; i += 500) {
+			this.loadModelGLTF(i);
+		}
 
 		this.addGrid();
 	}
@@ -187,7 +189,7 @@ export class MainComponent implements OnInit {
 				const relativeCameraOffset = new THREE.Vector3(0, 0, 1.1);
 				const cameraOffset = relativeCameraOffset.applyMatrix4(this.Ship.ship.matrixWorld);
 				const worldPoint = new CANNON.Vec3(0, 0, 1.1);
-// 				const worldPoint = new CANNON.Vec3(cameraOffset.x, cameraOffset.y, cameraOffset.z);
+				// 				const worldPoint = new CANNON.Vec3(cameraOffset.x, cameraOffset.y, cameraOffset.z);
 				const impulse = new CANNON.Vec3(0, 0, .1);
 				this.Ship.body.applyLocalImpulse(impulse, worldPoint);
 
@@ -305,7 +307,7 @@ export class MainComponent implements OnInit {
 			});
 		});
 	}
-	loadModelGLTF() {
+	loadModelGLTF(x?) {
 		const context = this;
 		// const path = './../../assets/examples/models/gltf/BoomBox/glTF/';
 		// context.gltfLoader.load(path + 'BoomBox.gltf', function (gltf) {
@@ -314,7 +316,8 @@ export class MainComponent implements OnInit {
 			const object = gltf.scene;
 			console.log(object);
 			object.scale.set(10, 10, 10);
-			object.position.set(50, 10, 10);
+			x = x || 59;
+			object.position.set(x, 10, 10);
 
 			object.traverse(function (node) {
 				if (node.material && (node.material.isMeshStandardMaterial ||
