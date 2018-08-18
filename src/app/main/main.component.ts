@@ -1,6 +1,6 @@
 declare var require: any;
 import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
-import { Group, ObjectLoader, TextureLoader, Vector3 } from 'three';
+import { Group, ObjectLoader, TextureLoader, Vector3, Quaternion } from 'three';
 import { ShipService, PlayerData } from './ship.service';
 
 
@@ -48,6 +48,7 @@ export class MainComponent implements OnInit {
 	private controls: THREE.OrbitControls;
 	private bottle;
 	private tempGltf;
+	private arrowhelpers = [];
 	private players = {
 
 	};
@@ -82,7 +83,7 @@ export class MainComponent implements OnInit {
 		this.scene = new THREE.Scene();
 		this.addEnvMap();
 
-		this.camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 1, 3000);
+		this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
 		// this.scene.add(this.camera);
 		this.controls = new OrbitControls(this.camera);
 		// this.camera.position.set(0, 20, 100);
@@ -97,11 +98,10 @@ export class MainComponent implements OnInit {
 		// this.loadAsteroidModelGLTF();
 		this.loadPlayer();
 		this.loadAllPlayers();
-		for (let i = 0; i < 50000; i += 500) {
-			this.loadModelGLTF(i);
-		}
+		this.loadAsteroidGLTF(new Vector3(-10, -10, -10), 200);
+		this.loadAsteroidField();
 
-		this.addGrid();
+		// this.addGrid();
 	}
 	initCannon() {
 		this.world = new CANNON.World();
@@ -128,7 +128,7 @@ export class MainComponent implements OnInit {
 		this.scene.add(hemiLight);
 	}
 	setCamera(obj) {
-		const relativeCameraOffset = new THREE.Vector3(0, 0, -6);
+		const relativeCameraOffset = new THREE.Vector3(0, 0, -1);
 		const cameraOffset = relativeCameraOffset.applyMatrix4(obj.matrixWorld);
 		this.camera.position.x = cameraOffset.x;
 		this.camera.position.y = cameraOffset.y;
@@ -138,12 +138,13 @@ export class MainComponent implements OnInit {
 	}
 	addGrid() {
 		const size = 1000;
-		const divisions = 100;
+		const divisions = 10;
 
 		const gridHelper = new THREE.GridHelper(size, divisions);
 		this.scene.add(gridHelper);
 	}
 	update() {
+
 		// Step the physics world
 		this.world.step(this.timeStep);
 		this.objects.forEach(obj => {
@@ -151,62 +152,64 @@ export class MainComponent implements OnInit {
 			obj.mesh.position.copy(obj.body.position);
 			obj.mesh.quaternion.copy(obj.body.quaternion);
 		});
+		/*
+		for (const key of Object.keys(this.players)) {
+			this.players[key].body.position.copy(this.players[key].object.position);
+			this.players[key].body.quaternion.copy(this.players[key].object.quaternion);
+		} */
 		if (this.Ship.ship) {
+			this.arrowhelpers.forEach((obj) => {
+				this.Ship.ship.remove(obj);
+			});
 			this.Ship.ship.position.copy(this.Ship.body.position);
 			this.Ship.ship.quaternion.copy(this.Ship.body.quaternion);
-			// this.ship.rotateX(0.1);
-			// this.ship.rotateY(0.1);
-			// this.ship.position.addScalar(0.5);
-			const delta = this.Ship.clock.getDelta(); // seconds.
-			const speed = (10 + (this.Ship.getEnergyLevel())) * delta;
-			const rotateAngle = Math.PI / 2 * delta;  // pi/2 radians (90 degrees) per second
-			// Move forward
-			// this.Ship.ship.translateZ(speed);
+			const delta = this.Ship.clock.getDelta(); // seconds since last frame.
 			if (this.mixer != null) {
 				this.mixer.update(delta);
 			}
-			// const rotation_matrix = new THREE.Matrix4().identity();
+			if (this.Ship.rotateShip.barrelleft) { // q
+				const worldPoint = new CANNON.Vec3(-.07, 0, 0);
+				const impulse = new CANNON.Vec3(0, .01, 0);
+				this.Ship.body.applyForce(impulse, worldPoint);
+				this.addArrowHelper(impulse, worldPoint);
+			}
+			if (this.Ship.rotateShip.barrelright) { // e
+				const worldPoint = new CANNON.Vec3(.07, 0, 0);
+				const impulse = new CANNON.Vec3(0, .01, 0);
+				this.Ship.body.applyForce(impulse, worldPoint);
+				this.addArrowHelper(impulse, worldPoint);
+			}
 			if (this.Ship.rotateShip.left) { // a
-				const relativeCameraOffset = new THREE.Vector3(1.1, 1.1, 0);
-				const cameraOffset = relativeCameraOffset.applyMatrix4(this.Ship.ship.matrixWorld);
-				const worldPoint = new CANNON.Vec3(1.1, 1.1, 0);
-				const impulse = new CANNON.Vec3(.1, 0, 0);
-				// this.Ship.body.applyLocalForce(impulse, worldPoint);
-				this.Ship.body.applyLocalForce(impulse, worldPoint);
+				const worldPoint = new CANNON.Vec3(0, 0, .1);
+				const impulse = new CANNON.Vec3(.01, 0, 0);
+				this.Ship.body.applyForce(impulse, worldPoint);
+				this.addArrowHelper(impulse, worldPoint);
+			}
+			if (this.Ship.rotateShip.right) { // d
+				const worldPoint = new CANNON.Vec3(0, 0, .1);
+				const impulse = new CANNON.Vec3(-.01, 0, 0);
+				this.Ship.body.applyForce(impulse, worldPoint);
+				this.addArrowHelper(impulse, worldPoint);
+			}
 
-				// this.Ship.ship.rotateOnAxis(new THREE.Vector3(0, 0, 1), -rotateAngle);
+			if (this.Ship.rotateShip.pullup) { // w
+				const worldPoint = new CANNON.Vec3(0, 0, .1);
+				const impulse = new CANNON.Vec3(0, .01, 0);
+				this.Ship.body.applyForce(impulse, worldPoint);
+				this.addArrowHelper(impulse, worldPoint);
 			}
-			if (this.Ship.rotateShip.right) {
-				const relativeCameraOffset = new THREE.Vector3(-1.1, 1.1, 0);
-				const cameraOffset = relativeCameraOffset.applyMatrix4(this.Ship.ship.matrixWorld);
-				const worldPoint = new CANNON.Vec3(-1.1, 1.1, 0);
-				const impulse = new CANNON.Vec3(-.1, 0, 0);
-				this.Ship.body.applyLocalForce(impulse, worldPoint);
-				// this.Ship.ship.rotateOnAxis(new THREE.Vector3(0, 0, 1), rotateAngle);
+			if (this.Ship.rotateShip.pulldown) {// d
+				const worldPoint = new CANNON.Vec3(0, 0, .1);
+				const impulse = new CANNON.Vec3(0, -.01, 0);
+				this.Ship.body.applyForce(impulse, worldPoint);
+				this.addArrowHelper(impulse, worldPoint);
 			}
-			// w
-			if (this.Ship.rotateShip.pullup) {
-				const relativeCameraOffset = new THREE.Vector3(0, 0, 1.1);
-				const cameraOffset = relativeCameraOffset.applyMatrix4(this.Ship.ship.matrixWorld);
-				const worldPoint = new CANNON.Vec3(0, 0, 1.1);
-				// 				const worldPoint = new CANNON.Vec3(cameraOffset.x, cameraOffset.y, cameraOffset.z);
-				const impulse = new CANNON.Vec3(0, 0, .1);
+			if (this.Ship.rotateShip.mainthruster) {
+				const worldPoint = new CANNON.Vec3(0, 0, -.15);
+				const impulse = new CANNON.Vec3(0, 0, .03);
 				this.Ship.body.applyLocalImpulse(impulse, worldPoint);
-
-				// this.Ship.ship.rotateOnAxis(new THREE.Vector3(1, 0, 0), rotateAngle);
+				this.addArrowHelper(impulse, worldPoint);
 			} // d
-			if (this.Ship.rotateShip.pulldown) {
-				const relativeCameraOffset = new THREE.Vector3(0, -1.1, 0);
-				const cameraOffset = relativeCameraOffset.applyMatrix4(this.Ship.ship.matrixWorld);
-				const worldPoint = new CANNON.Vec3(0, -1.1, 0);
-				const impulse = new CANNON.Vec3(0, 0, .1);
-				this.Ship.body.applyLocalForce(impulse, worldPoint);
-
-				// this.Ship.ship.rotateOnAxis(new THREE.Vector3(1, 0, 0), -rotateAngle);
-			}
-			// ssssssssssssthis.setCamera();
-			// console.log(this.Ship.ship.position); // Vector3
-			// console.log('sending update'); // Euler {_x: 0, _y: 0, _z: 0, _order: "XYZ", onChangeCallback: ƒ}
 			this.Ship.posrot$.next();
 		}
 	}
@@ -216,10 +219,11 @@ export class MainComponent implements OnInit {
 		this.loadShipModel().then(gltf => {
 			context.Ship.ship = gltf.scene;
 			// context.Ship.ship.add();
-			const shape = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
+			const shape = new CANNON.Box(new CANNON.Vec3(.05, .05, .05));
 			context.Ship.body = new CANNON.Body({
 				mass: 1
 			});
+
 			context.Ship.body.addShape(shape);
 			context.Ship.body.angularVelocity.set(0, 0, 0);
 			context.Ship.body.angularDamping = .2;
@@ -227,13 +231,25 @@ export class MainComponent implements OnInit {
 
 			gltf.scene.add(context.camera);
 			context.scene.add(context.Ship.ship);
-
+			const radius = (Math.floor(Math.random() * Math.floor(3)));
+			// random angle
+			const angle = Math.random() * Math.PI * 2;
+			const x = Math.cos(angle) * radius;
+			const y = Math.sin(angle) * radius;
+			// z is between -15 and 15.
+			const z = Math.tan(angle) * radius;
+			// a vector point using x, y, z we just randomized
+			const position = new Vector3(x, y, z);
+			context.Ship.body.position.copy(position);
+			// context.Ship.ship.position.copy(position);
+			/*
 			context.mixer = new THREE.AnimationMixer(context.Ship.ship);
 			context.mixer.clipAction(gltf.animations[0]).play();
+			*/
 			context.setCamera(context.Ship.ship);
 			console.log('LOADEd THIS PLAYER', context.Ship.ship);
 			context.Ship.initFirebaseShipData();
-			// context.fireAllAnimations(gltf, context.Ship.ship);
+			context.fireAllAnimations(gltf, context.Ship.ship);
 		});
 	}
 	loadAllPlayers() {
@@ -246,53 +262,54 @@ export class MainComponent implements OnInit {
 				if (data && data.length) {
 					data.forEach((player: PlayerData) => {
 						if (player.key && player.key !== context.Ship.playerkey) {
-							loadModel(player);
-							updatePosRot(player);
+							if (!context.players[player.key]) {
+								loadModel(player);
+							} else if (context.players[player.key]) {
+								updatePosRot(player);
+							}
 						}
 					});
 				}
 			});
 		function loadModel(player) {
-			if (!context.players[player.key]) {
-				context.loadShipModel().then(gltf => {
-					context.players[player.key] = player;
-					context.players[player.key].object = gltf.scene;
-					context.scene.add(context.players[player.key].object);
-					console.log('Player Loaded', player.key);
+			context.loadShipModel().then(gltf => {
+				context.players[player.key] = {};
+				context.players[player.key].player = player;
+				context.players[player.key].object = gltf.scene;
+				const shape = new CANNON.Box(new CANNON.Vec3(.05, .05, .05));
+				context.players[player.key].body = new CANNON.Body({
+					mass: 1
 				});
-			}
+				context.players[player.key].body.addShape(shape);
+				context.players[player.key].body.angularVelocity.set(0, 0, 0);
+				context.players[player.key].body.angularDamping = .2;
+				context.world.addBody(context.players[player.key].body);
+
+				context.scene.add(context.players[player.key].object);
+				console.log('Player Loaded', player.key);
+			});
 		}
 		function updatePosRot(player) {
-			if (context.players[player.key] &&
-				context.players[player.key].object &&
-				context.players[player.key].object.position &&
-				player.rotation) {
-				const speed = (10 + (context.Ship.getEnergyLevel()));
-				const currentPoint = context.players[player.key].object.position;  // we will re-use it
-				const destinationPoint = new THREE.Vector3(player.position.x, player.position.y, player.position.z);
-				const distance = currentPoint.distanceTo(destinationPoint);
-				const duration = (Date.now() - player.updated) + 10;
-				new TWEEN.Tween(context.players[player.key].object.position)
-					.to(destinationPoint, duration) // destinationPoint is the object of destination
-					.start();
-				context.players[player.key].object.rotation.x = player.rotation._x;
-				context.players[player.key].object.rotation.y = player.rotation._y;
-				context.players[player.key].object.rotation.z = player.rotation._z;
-				// context.players[player.key].object.position.set();
-
-				/*
-				for (const axis of player.position) {
-					context.players[player.key].object[axis] = player.position[axis];
-				}
-				*/
-			}
+			const destinationPoint = new THREE.Vector3(player.position.x, player.position.y, player.position.z);
+			const duration = (Date.now() - player.updated) + 10;
+			new TWEEN.Tween(context.players[player.key].body.position)
+				.to(destinationPoint, duration) // destinationPoint is the object of destination
+				.start();
+			new TWEEN.Tween(context.players[player.key].object.position)
+				.to(destinationPoint, duration) // destinationPoint is the object of destination
+				.start();
+			const quaternion = new Quaternion(player.quaternion._x, player.quaternion._y, player.quaternion._z, player.quaternion._w);
+			// context.players[player.key].object.quaternion.copy(quaternion);
+			new TWEEN.Tween(context.players[player.key].object.quaternion)
+				.to(quaternion, duration) // destinationPoint is the object of destination
+				.start();
 		}
 	}
 	loadShipModel(): Promise<any> {
 		const context = this;
-		const path = './../../assets/models/seth_ship1/';
+		const path = './../../assets/models/Seth_ship/';
 		return new Promise((resolve, reject) => {
-			context.gltfLoader.load(path + 'Spaceship_shooting_animation.gltf', function (gltf) {
+			context.gltfLoader.load(path + 'SethsSpaceshipcameras.gltf', function (gltf) {
 				gltf.scene.traverse(function (node) {
 					if (node.isMesh || node.isLight) { node.castShadow = true; }
 				});
@@ -307,17 +324,43 @@ export class MainComponent implements OnInit {
 			});
 		});
 	}
-	loadModelGLTF(x?) {
+	loadAsteroidField() {
+		// constant variables that dont change, field size
+		const fieldRadiusMin = 135;
+		const fieldRadiusMax = 175;
+		// a 'for loop', run this 100 times (100 asteroids)
+		for (let i = 0; i < 50; i++) {
+			// random radius somewhere between 135 and 175
+			const radius = (Math.floor(Math.random() * Math.floor(fieldRadiusMax - fieldRadiusMin))) + fieldRadiusMin;
+			// random angle
+			const angle = Math.random() * Math.PI * 2;
+			// random x, y, z
+			const x = Math.cos(angle) * radius;
+			const y = Math.sin(angle) * radius;
+			// z is between -15 and 15.
+			const z = Math.floor(Math.random() * Math.floor(30)) - 15;
+			// a vector point using x, y, z we just randomized
+			const position = new Vector3(x, y, z);
+			// random size
+			const size = Math.floor(Math.random() * Math.floor(30)) + 20;
+			// TODO randomize rotation
+
+			// load the asteriod using the random VECTOR position and random size.
+			this.loadAsteroidGLTF(position, size);
+		}
+	}
+	loadAsteroidGLTF(pos?: Vector3, size?: number) {
 		const context = this;
 		// const path = './../../assets/examples/models/gltf/BoomBox/glTF/';
 		// context.gltfLoader.load(path + 'BoomBox.gltf', function (gltf) {
-		const path = './../../assets/models/asteroid/';
+		const path = './../../assets/models/Asteroid/';
 		context.gltfLoader.load(path + 'Astroid3rd.gltf', function (gltf) {
 			const object = gltf.scene;
 			console.log(object);
-			object.scale.set(10, 10, 10);
-			x = x || 59;
-			object.position.set(x, 10, 10);
+			size = size || 20;
+			object.scale.set(size, size, size);
+			pos = pos || new Vector3(10, 10, 10);
+			object.position.copy(pos);
 
 			object.traverse(function (node) {
 				if (node.material && (node.material.isMeshStandardMaterial ||
@@ -326,6 +369,7 @@ export class MainComponent implements OnInit {
 					node.material.needsUpdate = true;
 				}
 			});
+			console.log('spawned aseteroid');
 			context.scene.add(object);
 			// context.camera.lookAt(object);
 			// context.controls.update();
@@ -367,5 +411,11 @@ export class MainComponent implements OnInit {
 		this.envMap.format = THREE.RGBFormat;
 		return this.envMap;
 	}
-
+	addArrowHelper(impulse, worldPoint, length?, hex?) {
+		length = length || .1;
+		hex = hex || 0xffff00;
+		const arrowHelper = new THREE.ArrowHelper(impulse, worldPoint, length, hex);
+		this.Ship.ship.add(arrowHelper);
+		this.arrowhelpers.push(arrowHelper);
+	}
 }

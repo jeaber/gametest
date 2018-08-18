@@ -7,15 +7,16 @@ const OrbitControls = require('three-orbit-controls')(THREE);
 import { debounceTime, map, throttleTime } from 'rxjs/operators';
 import { Vector3, Euler } from 'three';
 import { AngularFireDatabase } from 'angularfire2/database';
+import { THIS_EXPR } from '@angular/compiler/src/output/output_ast';
 interface ShipData {
 	position: Vector3;
-	rotation: Euler;
+	quaternion: Euler;
 }
 export interface PlayerData {
 	key?: any;
 	guest: any;
 	position: any;
-	rotation: any;
+	quaternion: any;
 	updated: any;
 }
 @Injectable()
@@ -23,16 +24,20 @@ export class ShipService {
 	shipEnergyLevel: number;
 	ship;
 	body;
+	speed: number;
 	public playerkey;
 	public posrot$ = new Subject();
 	public rotateShip = {
+		barrelleft: false,
+		barrelright: false,
 		left: false,
 		right: false,
 		pullup: false,
-		pulldown: false
+		pulldown: false,
+		mainthruster: false
 	};
 	public clock: THREE.Clock;
-
+	private lastPosition: Vector3 = new Vector3;
 	constructor(private db: AngularFireDatabase) {
 		const context = this;
 		this.shipEnergyLevel = 10;
@@ -41,7 +46,8 @@ export class ShipService {
 			.asObservable()
 			.pipe(throttleTime(100))
 			.subscribe(() => {
-				context.updateFirebaseShipDate();
+				context.calculateShipSpeed();
+				context.updateFirebaseShipData();
 			});
 	}
 	getEnergyLevel() {
@@ -53,8 +59,12 @@ export class ShipService {
 			this.playerkey = playerref.key;
 		});
 	}
-	updateFirebaseShipDate() {
-		const context = this;
+	calculateShipSpeed() {
+		this.speed = (this.lastPosition.distanceToSquared(this.ship.position));
+		this.lastPosition.copy(this.ship.position);
+	}
+
+	updateFirebaseShipData() {
 		const afList = this.db.list<any>('/players/');
 		if (!this.playerkey) {
 		} else {
@@ -66,13 +76,13 @@ export class ShipService {
 			// key: undefined,
 			guest: true,
 			position: this.ship.position,
-			rotation: this.ship.rotation,
+			quaternion: this.ship.quaternion,
 			updated: Date.now()
 		};
 		if (this.playerkey) {
 			data.key = this.playerkey;
 		}
-		delete data.rotation.onChangeCallback;
+		delete data.quaternion.onChangeCallback;
 		return data;
 	}
 	getSpeed() {

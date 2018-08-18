@@ -18,10 +18,17 @@ export class UserInterfaceComponent implements OnInit {
 	ngOnInit() {
 
 	}
+
 	@HostListener('window:keyup', ['$event'])
 	onKeyup(event: any) {
 		console.log('keyup..', event.key);
 		// rotate left/right/up/down
+		if (event.key === 'Q' || event.key === 'q') {
+			this.Ship.rotateShip.barrelleft = false;
+		}
+		if (event.key === 'E' || event.key === 'e') {
+			this.Ship.rotateShip.barrelright = false;
+		}
 		if (event.key === 'A' || event.key === 'a') {
 			this.Ship.rotateShip.left = false;
 		}
@@ -34,9 +41,18 @@ export class UserInterfaceComponent implements OnInit {
 		if (event.key === 'S' || event.key === 's') {
 			this.Ship.rotateShip.pulldown = false;
 		}
+		if (event.key === ' ') {
+			this.Ship.rotateShip.mainthruster = false;
+		}
 	}
 	@HostListener('window:keydown', ['$event'])
 	onKeydown(event: any) {
+		if (event.key === 'Q' || event.key === 'q') {
+			this.Ship.rotateShip.barrelleft = true;
+		}
+		if (event.key === 'E' || event.key === 'e') {
+			this.Ship.rotateShip.barrelright = true;
+		}
 		if (event.key === 'A' || event.key === 'a') {
 			this.Ship.rotateShip.left = true;
 		}
@@ -49,5 +65,14 @@ export class UserInterfaceComponent implements OnInit {
 		if (event.key === 'S' || event.key === 's') {
 			this.Ship.rotateShip.pulldown = true;
 		}
+		if (event.key === ' ') {
+			this.Ship.rotateShip.mainthruster = true;
+		}
+	}
+	getSpeed() {
+		if (this.Ship.body) {
+			// return this.Ship.speed;
+			return this.Ship.body.previousPosition.distanceTo(this.Ship.body.position) * this.Ship.clock.getDelta() * 60 * 1000;
+		} else { return 0; }
 	}
 }
