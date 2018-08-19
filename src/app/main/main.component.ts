@@ -49,6 +49,7 @@ export class MainComponent implements OnInit {
 	private bottle;
 	private tempGltf;
 	private arrowhelpers = [];
+	private particles = [];
 	private players = {
 
 	};
@@ -56,8 +57,8 @@ export class MainComponent implements OnInit {
 	// private cube: THREE.Mesh;
 	private envMap;
 	private objects = [];
+	private blackhole;
 	constructor(private Ship: ShipService, private db: AngularFireDatabase) {
-		console.log(THREE);
 	}
 
 	ngOnInit() {
@@ -98,7 +99,9 @@ export class MainComponent implements OnInit {
 		// this.loadAsteroidModelGLTF();
 		this.loadPlayer();
 		this.loadAllPlayers();
-		this.loadAsteroidGLTF(new Vector3(-10, -10, -10), 200);
+		this.loadAsteroidGLTF(new Vector3(-10, -10, -10), 200).then((gltf) => {
+			this.blackhole = gltf.scene;
+		});
 		this.loadAsteroidField();
 
 		// this.addGrid();
@@ -144,6 +147,7 @@ export class MainComponent implements OnInit {
 		this.scene.add(gridHelper);
 	}
 	update() {
+		const context = this;
 
 		// Step the physics world
 		this.world.step(this.timeStep);
@@ -179,14 +183,14 @@ export class MainComponent implements OnInit {
 				this.Ship.body.applyForce(impulse, worldPoint);
 				this.addArrowHelper(impulse, worldPoint);
 			}
-			if (this.Ship.rotateShip.left) { // a
-				const worldPoint = new CANNON.Vec3(0, 0, .1);
+			if (this.Ship.rotateShip.left) { // ad
+				const worldPoint = new CANNON.Vec3(.1, 0, .1);
 				const impulse = new CANNON.Vec3(.01, 0, 0);
 				this.Ship.body.applyForce(impulse, worldPoint);
 				this.addArrowHelper(impulse, worldPoint);
 			}
 			if (this.Ship.rotateShip.right) { // d
-				const worldPoint = new CANNON.Vec3(0, 0, .1);
+				const worldPoint = new CANNON.Vec3(-.1, 0, .1);
 				const impulse = new CANNON.Vec3(-.01, 0, 0);
 				this.Ship.body.applyForce(impulse, worldPoint);
 				this.addArrowHelper(impulse, worldPoint);
@@ -210,7 +214,46 @@ export class MainComponent implements OnInit {
 				this.Ship.body.applyLocalImpulse(impulse, worldPoint);
 				this.addArrowHelper(impulse, worldPoint);
 			} // d
+
+			setGravity();
 			this.Ship.posrot$.next();
+			if (this.particles.length > 2000) {
+				for (let i = 0; i < 1000; i++) {
+					this.scene.remove(this.particles[i]);
+				}
+				this.particles = this.particles.slice(1000);
+			}
+		}
+		// runs every frame to constantly change gravity
+		function setGravity() {
+			// dont do anything if there is no blackhole or ship
+			if (!context.blackhole || !context.Ship.body) { return; }
+			// get ship and center positions
+			const pos = new Vector3();
+			const center = new Vector3();
+			pos.copy(context.Ship.body.position);
+			center.copy(context.blackhole.position);
+			// get distance between ship and center
+			const distance = pos.distanceToSquared(center) * .0001;
+
+			const dir = new THREE.Vector3();
+			// get the point between center and ship and scale that line out based on distance (stronger gravity)
+			// .multiplyScalar(distance).normalize()
+			dir.subVectors(center, pos).normalize();
+			console.log(dir);
+			// dir.transformDirection(context.Ship.ship.matrixWorld);
+			// const localPos: Vector3 = context.Ship.ship.worldToLocal(dir);
+			// console.log('local', localPos);
+			// x y z gravity. standard game gravity is (0, -8.9, 0). (falling down on the Y axis 8.7 meters/second).
+			// dynamically change the gravity to the point in the middle of the ship and center (cheating)
+			context.world.gravity.set((dir.x * distance), (dir.y * distance), (dir.z * distance));
+
+			// add blue arrow based on distance
+			const length = distance * .1;
+			const hex = 0x00aaff;
+			const arrowHelper = new THREE.ArrowHelper(dir, pos, length, hex);
+			context.particles.push(arrowHelper);
+			context.scene.add(arrowHelper);
 		}
 	}
 
@@ -234,7 +277,7 @@ export class MainComponent implements OnInit {
 			const radius = (Math.floor(Math.random() * Math.floor(3)));
 			// random angle
 			const angle = Math.random() * Math.PI * 2;
-			const x = Math.cos(angle) * radius;
+			const x = Math.cos(angle) * (radius + 50);
 			const y = Math.sin(angle) * radius;
 			// z is between -15 and 15.
 			const z = Math.tan(angle) * radius;
@@ -325,11 +368,12 @@ export class MainComponent implements OnInit {
 		});
 	}
 	loadAsteroidField() {
+		const context = this;
 		// constant variables that dont change, field size
 		const fieldRadiusMin = 135;
 		const fieldRadiusMax = 175;
 		// a 'for loop', run this 100 times (100 asteroids)
-		for (let i = 0; i < 50; i++) {
+		for (let i = 0; i < 10; i++) {
 			// random radius somewhere between 135 and 175
 			const radius = (Math.floor(Math.random() * Math.floor(fieldRadiusMax - fieldRadiusMin))) + fieldRadiusMin;
 			// random angle
@@ -346,34 +390,35 @@ export class MainComponent implements OnInit {
 			// TODO randomize rotation
 
 			// load the asteriod using the random VECTOR position and random size.
-			this.loadAsteroidGLTF(position, size);
+			this.loadAsteroidGLTF(position, size).then((gltf) => {
+
+			});
 		}
 	}
-	loadAsteroidGLTF(pos?: Vector3, size?: number) {
+	loadAsteroidGLTF(pos?: Vector3, size?: number): Promise<any> {
 		const context = this;
 		// const path = './../../assets/examples/models/gltf/BoomBox/glTF/';
 		// context.gltfLoader.load(path + 'BoomBox.gltf', function (gltf) {
 		const path = './../../assets/models/Asteroid/';
-		context.gltfLoader.load(path + 'Astroid3rd.gltf', function (gltf) {
-			const object = gltf.scene;
-			console.log(object);
-			size = size || 20;
-			object.scale.set(size, size, size);
-			pos = pos || new Vector3(10, 10, 10);
-			object.position.copy(pos);
-
-			object.traverse(function (node) {
-				if (node.material && (node.material.isMeshStandardMaterial ||
-					(node.material.isShaderMaterial && node.material.envMap !== undefined))) {
-					node.material.envMap = context.envMap;
-					node.material.needsUpdate = true;
-				}
+		return new Promise((resolve) => {
+			context.gltfLoader.load(path + 'Astroid3rd.gltf', function (gltf) {
+				const object = gltf.scene;
+				size = size || 20;
+				object.scale.set(size, size, size);
+				pos = pos || new Vector3(10, 10, 10);
+				object.position.copy(pos);
+				object.traverse(function (node) {
+					if (node.material && (node.material.isMeshStandardMaterial ||
+						(node.material.isShaderMaterial && node.material.envMap !== undefined))) {
+						node.material.envMap = context.envMap;
+						node.material.needsUpdate = true;
+					}
+				});
+				context.scene.add(object);
+				resolve(gltf);
 			});
-			console.log('spawned aseteroid');
-			context.scene.add(object);
-			// context.camera.lookAt(object);
-			// context.controls.update();
 		});
+
 	}
 
 	fireAllAnimations(gltf, object) {

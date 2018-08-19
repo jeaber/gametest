@@ -71,8 +71,8 @@ export class UserInterfaceComponent implements OnInit {
 	}
 	getSpeed() {
 		if (this.Ship.body) {
-			// return this.Ship.speed;
-			return this.Ship.body.previousPosition.distanceTo(this.Ship.body.position) * this.Ship.clock.getDelta() * 60 * 1000;
+			return this.Ship.speed;
+			// return this.Ship.body.previousPosition.distanceTo(this.Ship.body.position) * this.Ship.clock.getDelta() * 60 * 1000;
 		} else { return 0; }
 	}
 }
